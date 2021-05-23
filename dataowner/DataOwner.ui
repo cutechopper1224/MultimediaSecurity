@@ -6,40 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1852</width>
-    <height>809</height>
+    <width>914</width>
+    <height>278</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>PTT文章搜尋器</string>
+   <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QLabel" name="label">
+   <widget class="QPushButton" name="btnProduct">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>10</y>
-      <width>81</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>微軟正黑體</family>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>關鍵字：</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="txtKeyword">
-    <property name="geometry">
-     <rect>
-      <x>80</x>
+      <x>180</x>
       <y>20</y>
-      <width>581</width>
-      <height>41</height>
+      <width>151</width>
+      <height>81</height>
      </rect>
     </property>
     <property name="font">
@@ -49,52 +30,16 @@
      </font>
     </property>
     <property name="text">
-     <string>請輸入關鍵字</string>
+     <string>建立內積索引</string>
     </property>
    </widget>
-   <widget class="QPlainTextEdit" name="txtContent">
-    <property name="geometry">
-     <rect>
-      <x>270</x>
-      <y>90</y>
-      <width>1571</width>
-      <height>691</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>微軟正黑體</family>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="plainText">
-     <string>這是第一行
-這是第二行
-哈啊哈啊</string>
-    </property>
-   </widget>
-   <widget class="QListWidget" name="lstTitle">
+   <widget class="QPushButton" name="btnEncrypt">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>90</y>
-      <width>251</width>
-      <height>701</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>微軟正黑體</family>
-     </font>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnSearch">
-    <property name="geometry">
-     <rect>
-      <x>680</x>
-      <y>10</y>
-      <width>121</width>
-      <height>51</height>
+      <y>20</y>
+      <width>161</width>
+      <height>81</height>
      </rect>
     </property>
     <property name="font">
@@ -104,53 +49,91 @@
      </font>
     </property>
     <property name="text">
-     <string>搜尋</string>
+     <string>加密資料庫</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btnSafeSearch">
+   <widget class="QPushButton" name="btnTree">
     <property name="geometry">
      <rect>
-      <x>820</x>
-      <y>10</y>
-      <width>121</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>微軟正黑體</family>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>安全搜尋</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnDecrypt">
-    <property name="geometry">
-     <rect>
-      <x>960</x>
-      <y>10</y>
-      <width>131</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>微軟正黑體</family>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>解密</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>1110</x>
-      <y>10</y>
+      <x>340</x>
+      <y>20</y>
       <width>151</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>建立樹狀索引</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnSec1">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>20</y>
+      <width>201</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>建立安全索引(BDMRS)</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnSec2">
+    <property name="geometry">
+     <rect>
+      <x>730</x>
+      <y>20</y>
+      <width>171</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>建立安全索引(EDMRS)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label1">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>180</y>
+      <width>371</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Hello, Data Owner!!!</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label2">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>180</y>
+      <width>411</width>
       <height>31</height>
      </rect>
     </property>
@@ -161,17 +144,7 @@
      </font>
     </property>
     <property name="text">
-     <string>最大搜尋數目：</string>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinBox">
-    <property name="geometry">
-     <rect>
-      <x>1110</x>
-      <y>40</y>
-      <width>121</width>
-      <height>41</height>
-     </rect>
+     <string>花費時間:0秒</string>
     </property>
    </widget>
   </widget>
@@ -180,7 +153,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1852</width>
+     <width>914</width>
      <height>18</height>
     </rect>
    </property>
