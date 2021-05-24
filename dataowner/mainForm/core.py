@@ -7,7 +7,6 @@ Created on Sat May 23 16:30:15 2021
 
 from PyQt5 import QtWidgets, uic, QtGui
 import os
-
 import glob
 import random
 import sys
@@ -18,10 +17,13 @@ import requests
 from bs4 import BeautifulSoup as soup
 import json
 import numpy as np
+import math
 from .mydialog import myDialog
+from .Tree import *
 import time
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
+
 
 path = os.getcwd()
 qtCreatorFile = path + os.sep + "DataOwner.ui"
@@ -47,11 +49,23 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inGuiEvent()
         self.num = 105961
         self.dialog = None
+        self.start = 99001
+        self.end = 100000
+        self.keyword = []
+        self.m = 1500
+        self.initialize()
   
+    def initialize(self):
+        f = open(f"keyword.txt", "r")
+        first = f.read()
+        f.close()
+        keywords = first.split('\n')
+        self.keyword = keywords[:-1]
 
     def inGuiEvent(self):
         self.setWindowTitle('Ptt文章搜尋器- Data Owner')
         self.btnEncrypt.clicked.connect(self.showPassForm)
+        self.btnTree.clicked.connect(self.generateTreeIndex)
         
 
     def showPassForm(self):
@@ -127,5 +141,224 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         used_time = time.time() - currentTime
         self.label2.setText(f'花費時間:{used_time}秒')
 
+
+    def generateTreeIndex(self):
+        currentTime = time.time()
+        if os.path.isfile('plaintree.json'):
+            self.label1.setText('已經產生過樹狀索引')
+            return
+
+
+        if not os.path.isfile('tf.json'):
+            self.generateTF()
+            
+        if not os.path.isfile('idf.json'):
+            self.generateIDF()
+            
+        
+
+        # Load TF table
+        f = open(f"tf.json", "r")
+        str1 = f.read()
+
+        n = self.end - self.start + 1
+
+        
+        Freqs = np.array(json.loads(str1))
+        print(Freqs.shape)
+        
+      
+        # BuildIndexTree
+
+        
+
+        serial = 0
+        CurrentNodeSet = []
+        AllNodes = []
+
+        for i in range(n):
+            node = TreeNode(serial, i)
+            node.D = Freqs[i]
+            CurrentNodeSet.append(node)
+            serial += 1
+
+        print(CurrentNodeSet[-1].ID)
+        print(CurrentNodeSet[-1].D)
+
+        AllNodes = AllNodes + CurrentNodeSet
+       
+        count = 0
+        while len(CurrentNodeSet) > 1:
+            count = count + 1
+            print(f'Tier {count}...')
+            TempNodeSet = []
+            if len(CurrentNodeSet) % 2 == 0:
+                for p in range(0, len(CurrentNodeSet), 2):
+                    u1 = CurrentNodeSet[p]
+                    u2 = CurrentNodeSet[p+1]
+                    u = TreeNode(serial, 0)
+                    serial += 1
+                    u.PL = u1.ID
+                    u.PR = u2.ID
+                    u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
+                    TempNodeSet.append(u)
+            
+            else:
+                h = (len(CurrentNodeSet) - 1) // 2
+                for p in range(0, h + 1, 2):
+                    u1 = CurrentNodeSet[p]
+                    u2 = CurrentNodeSet[p+1]
+                    u = TreeNode(serial, 0)
+                    serial += 1
+                    u.PL = u1.ID
+                    u.PR = u2.ID
+                    u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
+                    TempNodeSet.append(u)
+
+                u1 = CurrentNodeSet[2 * h - 2]
+                u2 = CurrentNodeSet[2 * h - 1]
+                u = TreeNode(serial, 0)
+                serial += 1
+                u.PL = u1.ID
+                u.PR = u2.ID
+                u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
+                TempNodeSet.append(u)
+
+                u1 = u
+                u2 = CurrentNodeSet[2 * h]
+                u = TreeNode(serial, 0)
+                serial += 1
+                u.PL = u1.ID
+                u.PR = u2.ID
+                u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
+                TempNodeSet.append(u)
+            
+            AllNodes = AllNodes + TempNodeSet
+            CurrentNodeSet = TempNodeSet
+
+        used_time = time.time() - currentTime
+        self.label2.setText(f'花費時間:{used_time}秒')
+
+        print('Root ID:')
+        print(CurrentNodeSet[0].ID)
+        print('Nodes amount:')
+        print(len(AllNodes))
+
+        sorted(AllNodes, key=lambda x: x.ID)
+        f = open(f"plaintree.json", "w")
+        f.write(json.dumps(AllNodes, cls=TreeNodeEncoder))
+        f.close()
+
+
+        
+
+
+    def generateIDF(self):
+        print("Calculating IDF")
+
+        
+
+        N = self.end - self.start + 1
+        database = np.zeros(self.m)
+
+        max_term = 0
+        for k in range(self.start, self.end + 1):
+            
+            print(f"Calculating IDF for {k}")
+            f = open(f"rawText/{k}.json", "r")
+            context = f.read()
+            try:
+                j = json.loads(context)
+            except:
+                pass
+
+            j_content = j['content'].split('※ 發信站: 批踢踢實業坊')[0]
+            
+            try:
+                j_title = j_content.split('\n')[1]
+                j_content = j_content.split(j_title)[1]
+                j_title = j_title.split('標題')[1].split('時間')[-2]
+            except:
+                j_title = ''
+
+            try:
+                j_push = j['content'].split('※ 發信站: 批踢踢實業坊')[1]
+            except:
+                j_push = ''
+
+            title = [j_title.count(keyword) for keyword in self.keyword]
+            content = [j_content.count(keyword) for keyword in self.keyword]
+            push = [j_push.count(keyword) for keyword in self.keyword]
+
+            term = title + content + push
+
+            
+            
+            for i in range(len(term)):
+                if term[i] != 0:
+                    database[i] += 1
+
+        
+        IDF_p = [np.log(1 + N / database[i]) if database[i] > 0 else 0 for i in range(self.m)]
+        #q = math.sqrt(np.sum(np.power(IDF_p, 2)))
+            
+        #IDF = list(np.array(IDF_p) / q)
+        
+        f = open(f"idf.json", "w")
+        f.write(json.dumps(IDF_p))
+        f.close()        
+
+
+    def generateTF(self):
+        database = {}
+        Freqs = []
+        eps = 0.5
+        for k in range(self.start, self.end + 1):
+            print(f"Calculating TF for {k}")
+          
+            
+            f = open(f"rawText/{k}.json", "r")
+
+            context = f.read()
+            try:
+                j = json.loads(context)
+            except:
+                pass
+   
+            frequency = {}
+            
+            j_content = j['content'].split('※ 發信站: 批踢踢實業坊')[0]
+            
+            try:
+                j_title = j_content.split('\n')[1]
+                j_content = j_content.split(j_title)[1]
+                j_title = j_title.split('標題')[1].split('時間')[-2]
+            except:
+                j_title = ''
+
+            try:
+                j_push = j['content'].split('※ 發信站: 批踢踢實業坊')[1]
+            except:
+                j_push = ''
+
+            f_title = [1 + np.log(j_title.count(keyword) + eps) for keyword in self.keyword]
+            f_content = [1 + np.log(j_content.count(keyword) + eps) for keyword in self.keyword]
+            f_push = [1 + np.log(j_push.count(keyword) + eps) for keyword in self.keyword]
+
+            f3 = f_title + f_content + f_push
+            f3 = np.array(f3)
+            
+            q = math.sqrt(np.sum(np.power(f3, 2)))
+            
+            
+            frequency = f3 / q
+            
+            Freqs.append(list(frequency))
+        
+        
+        f = open(f"tf.json", "w")
+        f.write(json.dumps(Freqs))
+        f.close()
+        
 
         

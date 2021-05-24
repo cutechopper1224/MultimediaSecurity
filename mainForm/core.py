@@ -18,6 +18,8 @@ import requests
 from bs4 import BeautifulSoup as soup
 import json
 import numpy as np
+import math
+import time
 from dataowner.mainForm.mydialog import myDialog
 from base64 import b64encode, b64decode
 path = os.getcwd()
@@ -26,6 +28,7 @@ iconFile = path + os.sep + "logo.png"
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
+from dataowner.mainForm.Tree import TreeNode 
 salt = b'\xd0\x18\xa7QM\xd6\x9b\xebxu\xe4\xed\xa8\x83\xf6\xa3/\x01\x9c\x9e\x86n\xda;\x10EdD\xf7\x932\xcc'
 
 
@@ -45,9 +48,11 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inGuiEvent()
         self.dialog = None
         self.num = 105961
+        self.start = 99001
+        self.end = 100000
         self.database = np.zeros((self.num, 1500))
         self.keyword = []
-        self.maxSearchTerm = 100
+        self.maxSearchTerm = 5
         self.spinBox.setMinimum(1)
         self.spinBox.setMaximum(1000) 
         self.spinBox.setValue(100)
@@ -55,6 +60,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.searchResult = []
         self.searchMode = 0
         self.createDatabase()
+        self.txtKeyword.setText('虎杖:all')
         
 
     def createDatabase(self):
@@ -172,6 +178,134 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             self.dialog.exec_()
 
 
+    def RScore(self, Du, Q):
+        return np.dot(Du, Q)
+
+    def GDFS(self, Nodes, index , Q, RList):
+        kthscore = RList[-1][0]
+        
+        u = Nodes[index]
+        if u.FID == 0:
+            if self.RScore(u.D, Q) > kthscore:
+                if u.PL != None:
+                    self.GDFS(Nodes, u.PL, Q, RList)
+                
+                if u.PR != None:
+                    self.GDFS(Nodes, u.PR, Q, RList)
+
+            else:
+                return
+        
+        else:
+            score = self.RScore(u.D, Q)
+            if score > kthscore:
+                for r in RList:
+                    if r[1] == u.FID:
+                        return
+
+                RList[-1] = (score, u.FID)
+               
+                for i in range(len(RList) - 1, 0, -1):
+                    if RList[i][0] > RList[i - 1][0]:
+                        temp = RList[i - 1]
+                        RList[i - 1] = RList[i]
+                        RList[i] = temp
+                
+            
+            return
+
+
+                
+        
+
+        
+
+    def UDMRS(self):
+        currentTime = time.time()
+        self.searchMode = 0
+        print('searching by UDMRS')
+
+        if not os.path.isfile('dataowner/plaintree.json') or not os.path.isfile('dataowner/idf.json'):
+            print('相關的索引檔尚未建立，請聯絡資料庫擁有者')
+            return
+
+        f = open(f"dataowner/plaintree.json", "r")
+        str1 = f.read()
+
+        n = self.end - self.start + 1
+        Nodes = []              
+        AllNodes = json.loads(str1)
+        for Node in AllNodes:
+            treenode = TreeNode(Node['ID'], Node['FID'])
+            treenode.PL = Node['PL']
+            treenode.PR = Node['PR']
+            treenode.D = np.array(Node['D'])
+            
+            Nodes.append(treenode)
+
+        
+        f = open('dataowner/idf.json', 'r')
+        str1 = f.read()
+        IDF_p = json.loads(str1)
+        
+        search = self.txtKeyword.text()
+        vector = self.getplainSearchVector(search)
+        
+        Q = np.zeros(1500)
+
+        for i in range(len(vector)):
+            if vector[i] != 0:
+                Q[i] = IDF_p[i]
+
+        q = math.sqrt(np.sum(np.power(Q, 2)))
+            
+        Q = Q / q
+        
+        print(self.RScore(Nodes[0].D, Q))
+
+        k = self.maxSearchTerm
+
+        RList = [(0, -1) for x in range(k)]
+        
+        self.GDFS(Nodes, -1, Q, RList)
+
+        print(RList)
+
+
+        self.searchResult.clear()
+        self.lstTitle.clear()
+
+        n = 0
+        for ret in RList:
+            if ret[1] == -1:
+                continue
+            n = n + 1
+
+            r = self.start + ret[1]
+            f = open(f"dataowner/Encrypted/{r}.bin", "rb")
+            context = f.read()
+            f.close()
+            self.searchResult.append(context)
+            self.lstTitle.addItem(f'Encrypted Doc {n}')
+
+        used_time = time.time() - currentTime
+        print(f'花費時間:{used_time}秒')
+        self.lstTitle.setCurrentRow(0)
+        self.searchMode = 1
+            
+        if self.searchResult:
+            self.display2(0)
+
+        
+
+        
+
+
+
+        
+
+
+        
 
     def inGuiEvent(self):
         #self.btnGenerate.clicked.connect(self.generateRaw)
@@ -180,6 +314,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.lstTitle.currentRowChanged.connect(self.display2)
         self.btnDecrypt.clicked.connect(self.showPassForm)
         self.spinBox.valueChanged.connect(self.spinValueChanged)
+        self.btnSafeSearch.clicked.connect(self.UDMRS)
     
 
     def spinValueChanged(self):
@@ -373,11 +508,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             except:
                 pass
 
-
-    def plainSearch(self):
-        self.searchMode = 0
-        self.txtContent.setPlainText(f"對原始資料進行搜尋... ({self.txtKeyword.text()})")
-        search = self.txtKeyword.text()
+    def getplainSearchVector(self, search):
         keywords = search.split(' ')
         vector = np.zeros((1500))
         for keyword in keywords:
@@ -402,8 +533,16 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                     vector[index] = 1
                     vector[index + 500] = 1
                     vector[index + 1000] = 1
-
         
+        return vector
+
+ 
+
+    def plainSearch(self):
+        self.searchMode = 0
+        self.txtContent.setPlainText(f"對原始資料進行搜尋... ({self.txtKeyword.text()})")
+        search = self.txtKeyword.text()
+        vector = getplainSearchVector(search)
         result = np.dot(self.database, vector)
         
         print('sum')
