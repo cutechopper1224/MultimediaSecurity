@@ -28,7 +28,9 @@ iconFile = path + os.sep + "logo.png"
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
-from dataowner.mainForm.Tree import TreeNode 
+from random import SystemRandom
+from dataowner.mainForm.Tree import TreeNode, SecureTreeNode
+from sklearn.datasets import make_spd_matrix
 salt = b'\xd0\x18\xa7QM\xd6\x9b\xebxu\xe4\xed\xa8\x83\xf6\xa3/\x01\x9c\x9e\x86n\xda;\x10EdD\xf7\x932\xcc'
 
 
@@ -50,6 +52,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.num = 105961
         self.start = 99001
         self.end = 100000
+        self.m = 1500
         self.database = np.zeros((self.num, 1500))
         self.keyword = []
         self.maxSearchTerm = 5
@@ -60,7 +63,30 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.searchResult = []
         self.searchMode = 0
         self.createDatabase()
-        self.txtKeyword.setText('虎杖:all')
+        self.randomKeyword()
+        self.txtContent.setPlainText('Hello, Client!\n請選擇想要的功能')
+
+    def inGuiEvent(self):
+        #self.btnGenerate.clicked.connect(self.generateRaw)
+        self.btnSearch.clicked.connect(self.plainSearch2)
+        #self.btnIndex.clicked.connect(self.generateIndex)
+        self.lstTitle.currentRowChanged.connect(self.display2)
+        self.btnDecrypt.clicked.connect(self.showPassForm)
+        self.spinBox.valueChanged.connect(self.spinValueChanged)
+        self.btnSafeSearch.clicked.connect(self.UDMRS)
+        self.btnTrapdoor.clicked.connect(self.GenTrapdoor)
+        self.btnTrapdoorSearch.clicked.connect(self.BDMRS)
+
+    
+    def randomKeyword(self):
+        chosen_keyword = random.choices(self.keyword, k = 5)
+        texts = ['title','content','push','all']
+        search_text = ""
+        for keyword in chosen_keyword:
+            text = random.choice(texts)
+            search_text += f"{keyword}:{text} "
+        search_text = search_text[:-1]
+        self.txtKeyword.setText(search_text)
         
 
     def createDatabase(self):
@@ -116,7 +142,10 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         
         password = self.dialog.edit.text()
         self.dialog.close()
-        key = PBKDF2(password, salt, dkLen=32)
+        try:
+            key = PBKDF2(password, salt, dkLen=32)
+        except:
+            return
 
         if self.searchMode == 1:
             
@@ -216,7 +245,149 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
                 
+    def GenTrapdoor(self):
+        currentTime = time.time()
+        if not os.path.isfile('dataowner/BDMRStree.json') or not os.path.isfile('dataowner/idf.json'):
+            self.txtContent.setPlainText('相關的索引檔尚未建立，請聯絡資料庫擁有者')
+            
+            return
+
+        if not os.path.isfile('dataowner/basic_secret.bin'):
+            self.txtContent.setPlainText('請先向資料庫擁有者取得金鑰！')
+            return
+
+        print('Generate Trapdoor for BDMRS')
+
+        f = open('dataowner/idf.json', 'r')
+        str1 = f.read()
+        IDF_p = json.loads(str1)
+
+        raw_search = self.txtKeyword.text()
         
+        try:
+            search = raw_search.split('->')[0]
+            filename = raw_search.split('->')[1]
+        except:
+            search = raw_search
+            filename = 'trapdoor'
+        vector = self.getplainSearchVector(search)
+        
+        Q = np.zeros(self.m)
+        Q_1 = np.zeros(self.m)
+        Q_2 = np.zeros(self.m)
+        cryptogen = SystemRandom()
+
+        f = open('dataowner/basic_secret.bin', "rb")
+        cipherdata = f.read()
+        f.close()
+        cipherdata = cipherdata.decode()
+        cipher = cipherdata.split('\n')
+        S = cipher[0]
+        index1 = int(cipher[1])
+        index2 = int(cipher[2])
+        M1 = make_spd_matrix(self.m, random_state = index1)
+        M2 = make_spd_matrix(self.m, random_state = index2)
+        M1_inv = np.linalg.inv(M1)
+        M2_inv = np.linalg.inv(M2)
+
+        for i in range(len(vector)):
+            if vector[i] != 0:
+                Q[i] = IDF_p[i]
+
+        q = math.sqrt(np.sum(np.power(Q, 2)))
+            
+        Q = Q / q
+
+        for i in range(self.m):
+            if S[i] == '1':
+                Q_1[i] = Q[i]
+                Q_2[i] = Q[i]
+            else:
+                Q_1[i] = cryptogen.random()
+                Q_2[i] = Q[i] - Q_1[i]
+
+        TD_1 = M1_inv.dot(Q_1)
+        TD_2 = M2_inv.dot(Q_2)
+
+        TD = list(TD_1) + list(TD_2)
+
+        used_time = time.time() - currentTime
+        print(f'花費時間:{used_time}秒')
+
+        self.txtContent.setPlainText('trapdoor已建立成功')
+        f = open(f"trapdoor/{filename}.json", "w")
+        f.write(json.dumps(TD))
+        f.close()
+
+   
+
+
+    def BDMRS(self):
+        currentTime = time.time()
+        self.searchMode = 0
+        
+
+        if not os.path.isfile('dataowner/BDMRStree.json'):
+            self.txtContent.setPlainText('相關的索引檔尚未建立，請聯絡資料庫擁有者')
+            return
+
+        filename = self.txtKeyword.text()
+        if filename == '':
+            filename = 'trapdoor'
+
+        if not os.path.isfile(f'trapdoor/{filename}.json'):
+            self.txtContent.setPlainText('請先產生搜尋用的trapdoor!')
+            return
+
+        print('searching by BDMRS')
+
+        f = open(f"dataowner/BDMRStree.json", "r")
+        str1 = f.read()
+
+        n = self.end - self.start + 1
+        Nodes = []              
+        AllNodes = json.loads(str1)
+        for Node in AllNodes:
+            treenode = TreeNode(Node['ID'], Node['FID'])
+            treenode.PL = Node['PL']
+            treenode.PR = Node['PR']
+            treenode.D = np.array(Node['Iu'])
+            
+            Nodes.append(treenode)
+
+        f = open(f'trapdoor/{filename}.json', "r")
+        str1 = f.read()
+        TD = np.array(json.loads(str1))
+        k = self.maxSearchTerm
+        RList = [(0, -1) for x in range(k)]
+        self.GDFS(Nodes, -1, TD, RList)
+        print(RList)
+
+        self.searchResult.clear()
+        self.lstTitle.clear()
+
+        n = 0
+        for ret in RList:
+            if ret[1] == -1:
+                continue
+            n = n + 1
+
+            r = self.start + ret[1]
+            f = open(f"dataowner/Encrypted/{r}.bin", "rb")
+            context = f.read()
+            f.close()
+            self.searchResult.append(context)
+            self.lstTitle.addItem(f'Encrypted Doc {n}')
+
+        used_time = time.time() - currentTime
+        print(f'花費時間:{used_time}秒')
+        self.lstTitle.setCurrentRow(0)
+        self.searchMode = 1
+            
+        if self.searchResult:
+            self.display2(0)
+
+
 
         
 
@@ -296,25 +467,8 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.searchResult:
             self.display2(0)
 
-        
 
-        
-
-
-
-        
-
-
-        
-
-    def inGuiEvent(self):
-        #self.btnGenerate.clicked.connect(self.generateRaw)
-        self.btnSearch.clicked.connect(self.plainSearch2)
-        #self.btnIndex.clicked.connect(self.generateIndex)
-        self.lstTitle.currentRowChanged.connect(self.display2)
-        self.btnDecrypt.clicked.connect(self.showPassForm)
-        self.spinBox.valueChanged.connect(self.spinValueChanged)
-        self.btnSafeSearch.clicked.connect(self.UDMRS)
+    
     
 
     def spinValueChanged(self):
@@ -537,6 +691,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         return vector
 
  
+    
 
     def plainSearch(self):
         self.searchMode = 0

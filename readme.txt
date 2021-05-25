@@ -47,7 +47,36 @@ k=10: 0.785530秒
 k=20: 1.052195秒
 k=50: 0.838183秒
 
-其它基於searchable encryption的功能尚未實作
 
+BDMRS:
+
+Step1: 到create.py生成dataowner的secret和BDMRS secure index
+Step2: 輸入keyword->filename當成關鍵字，然後按下「產生trapdoor」。
+例如：主角:all 魔法:all->magic
+則會在trapdoor資料夾生成檔名為magic的trapdoor。
+如不指定檔名，請使用和前面一樣的查詢方式，檔名將自動設為trapdoor。
+Step3:輸入檔案名稱當成關鍵字，然後按下「使用Trapdoor查詢」，如：magic。
+如想要使用預設的trapdoor，請留白。
+Step4:回傳結果是會加密過的文件，此時需要按「解密」鈕才能看到明文。解密的過程會要求輸入密碼，密碼必須和前面加密時所用的吻合。
+
+
+一些實驗數據：
+(1000筆)
+BuildingIndex: 4.618314秒
+
+搜尋
+(1個關鍵字): 
+建立Trapdoor: 2.335814秒
+搜尋：約 1.5秒
+
+(5個關鍵字): 
+建立Trapdoor: 1.953600秒
+搜尋：約 1.5秒
+
+
+#TODO
+EDMRS
+(Optional) Other Architecture
 
 如要新增新的按鈕或調整介面，使用qtdesigner生成.ui檔，覆蓋掉想要變更的.ui檔案即可。
+

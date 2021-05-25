@@ -23,6 +23,8 @@ from .Tree import *
 import time
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
+from random import SystemRandom
+from sklearn.datasets import make_spd_matrix
 
 
 path = os.getcwd()
@@ -66,6 +68,40 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setWindowTitle('Ptt文章搜尋器- Data Owner')
         self.btnEncrypt.clicked.connect(self.showPassForm)
         self.btnTree.clicked.connect(self.generateTreeIndex)
+        self.btnSec1.clicked.connect(self.generateBDMRSIndex)
+        
+
+    
+    def createBasicSecret(self):
+        print('Generating Basic serect ...')
+
+        cryptogen = SystemRandom()
+        sec = [cryptogen.randrange(2) for i in range(self.m)]
+        index1 = cryptogen.randrange(10 ** 6)
+        index2 = cryptogen.randrange(10 ** 6)
+        
+        
+        
+        cipher = ''
+        for s in sec:
+            cipher += str(s)
+        cipher += '\n'
+        cipher += str(index1)
+        cipher += '\n'
+        cipher += str(index2)
+
+        
+
+        outputFile = 'basic_secret.bin'
+
+        with open(outputFile, "wb") as f:
+            f.write(cipher.encode())
+                
+        
+        #print(np.linalg.inv(M1))
+        #print(M1.shape)
+        
+
         
 
     def showPassForm(self):
@@ -249,6 +285,85 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         f.write(json.dumps(AllNodes, cls=TreeNodeEncoder))
         f.close()
 
+
+    
+    def generateBDMRSIndex(self):
+        currentTime = time.time()
+
+        if os.path.isfile('BDMRStree.json'):
+            self.label1.setText('已經產生過該索引')
+            return
+
+        print("Generating BDMRS index...")
+        if not os.path.isfile('basic_secret.bin'):
+            self.createBasicSecret()
+
+        if not os.path.isfile('plaintree.json'):
+            self.generateTreeIndex()
+
+        f = open('basic_secret.bin', "rb")
+        cipherdata = f.read()
+        f.close()
+        cipherdata = cipherdata.decode()
+        cipher = cipherdata.split('\n')
+        S = cipher[0]
+        index1 = int(cipher[1])
+        index2 = int(cipher[2])
+
+        M1 = make_spd_matrix(self.m, random_state = index1)
+        M2 = make_spd_matrix(self.m, random_state = index2)
+        cryptogen = SystemRandom()
+        
+
+        f = open(f"plaintree.json", "r")
+        str1 = f.read()
+
+        n = self.end - self.start + 1
+        Nodes = []   
+        SecureNodes = []           
+        AllNodes = json.loads(str1)
+        for Node in AllNodes:
+            print(f"Processing Node {Node['ID']}")
+            securenode = SecureTreeNode(Node['ID'], Node['FID'])
+            securenode.PL = Node['PL']
+            securenode.PR = Node['PR']
+            Du = np.array(Node['D'])
+
+            Du_1 = np.zeros(self.m)
+            Du_2 = np.zeros(self.m)
+            for i in range(self.m):
+                if S[i] == '0':
+                    Du_1[i] = Du[i]
+                    Du_2[i] = Du[i]
+                
+                else:
+                    Du_1[i] = cryptogen.random()
+                    Du_2[i] = Du[i] - Du_1[i]
+
+            Iu_1 = M1.dot(Du_1)
+            Iu_2 = M2.dot(Du_2)
+            Iu = list(Iu_1) + list(Iu_2)
+            print(Iu_1)
+            
+            securenode.Iu = Iu
+            
+            SecureNodes.append(securenode)
+
+        used_time = time.time() - currentTime
+        self.label2.setText(f'花費時間:{used_time}秒')
+            
+
+        f = open(f"BDMRStree.json", "w")
+        f.write(json.dumps(SecureNodes, cls=TreeNodeEncoder))
+        f.close()
+
+        
+        
+
+
+        
+
+        
 
         
 
