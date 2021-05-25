@@ -40,8 +40,8 @@ class Article():
         self.content = ""
         self.push = ""
 
-class MainUi(QtWidgets.QMainWindow, Ui_MainWindow): 
-    
+class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
+
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
@@ -53,13 +53,14 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.start = 99001
         self.end = 100000
         self.m = 1500
+        self.m_p = 100
         self.database = np.zeros((self.num, 1500))
         self.keyword = []
         self.maxSearchTerm = 5
         self.spinBox.setMinimum(1)
-        self.spinBox.setMaximum(1000) 
+        self.spinBox.setMaximum(1000)
         self.spinBox.setValue(100)
-        
+
         self.searchResult = []
         self.searchMode = 0
         self.createDatabase()
@@ -75,9 +76,11 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.spinBox.valueChanged.connect(self.spinValueChanged)
         self.btnSafeSearch.clicked.connect(self.UDMRS)
         self.btnTrapdoor.clicked.connect(self.GenTrapdoor)
+        self.btnTrapdoor_2.clicked.connect(self.GenTrapdoor_E)
         self.btnTrapdoorSearch.clicked.connect(self.BDMRS)
+        self.btnTrapdoorSearch_2.clicked.connect(self.EDMRS)
 
-    
+
     def randomKeyword(self):
         chosen_keyword = random.choices(self.keyword, k = 5)
         texts = ['title','content','push','all']
@@ -87,7 +90,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             search_text += f"{keyword}:{text} "
         search_text = search_text[:-1]
         self.txtKeyword.setText(search_text)
-        
+
 
     def createDatabase(self):
         f = open(f"index.json", "r")
@@ -101,7 +104,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             for ind in index:
                 self.database[i][ind] = 1
 
- 
+
         f.close()
 
         f = open(f"keyword.txt", "r")
@@ -119,27 +122,27 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dialog = myDialog()
         self.dialog.resize(713, 300)
         self.dialog.setWindowIcon(QtGui.QIcon(iconFile))
-               
+
         self.dialog.edit = QLineEdit(self.dialog)
         self.dialog.edit.resize(531,41)
         self.dialog.edit.move(80,100)
         self.dialog.edit.setEchoMode(QLineEdit.Password)
         self.dialog.edit.setFont(QFont("Agency FB",24,QFont.Bold))
-        
-        
-        
+
+
+
         btn= QPushButton('確定',self.dialog)
         btn.move(260,220)
         btn.resize(160,61)
         btn.clicked.connect(self.DecryptData)
-        
+
         self.dialog.setWindowTitle("請輸入密碼")
-       
+
         self.dialog.setWindowModality(Qt.ApplicationModal)
         self.dialog.exec_()
 
     def DecryptData(self):
-        
+
         password = self.dialog.edit.text()
         self.dialog.close()
         try:
@@ -148,15 +151,15 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
         if self.searchMode == 1:
-            
+
 
             self.searchMode = 99
             plain = []
             title = []
-            
+
             for result in self.searchResult:
                 try:
-                    
+
                     iv = result[0:16]
                     cipheredData = result[16:]
                     cipher = AES.new(key, AES.MODE_CFB, iv=iv)
@@ -167,14 +170,14 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                     title.append(text)
 
                 except:
-                    
+
                     plain.append('Decoding Error')
                     title.append('未知的文件')
-            
-            
+
+
             self.lstTitle.clear()
             for t in title:
-                                   
+
                 self.lstTitle.addItem(t)
 
             self.lstTitle.setCurrentRow(0)
@@ -188,21 +191,21 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             self.dialog = myDialog()
             self.dialog.resize(713, 300)
             self.dialog.setWindowIcon(QtGui.QIcon(iconFile))
-                
+
             self.dialog.label = QLabel(self.dialog)
             self.dialog.label.resize(531,41)
             self.dialog.label.move(80,100)
             self.dialog.label.setFont(QFont("Agency FB",24,QFont.Bold))
             self.dialog.label.setText('沒有需要解密的搜尋結果。')
-              
-        
+
+
             btn= QPushButton('確定',self.dialog)
             btn.move(260,220)
             btn.resize(160,61)
             btn.clicked.connect(self.DestroyDialog)
-            
+
             self.dialog.setWindowTitle("錯誤")
-        
+
             self.dialog.setWindowModality(Qt.ApplicationModal)
             self.dialog.exec_()
 
@@ -212,19 +215,19 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def GDFS(self, Nodes, index , Q, RList):
         kthscore = RList[-1][0]
-        
+
         u = Nodes[index]
         if u.FID == 0:
             if self.RScore(u.D, Q) > kthscore:
                 if u.PL != None:
                     self.GDFS(Nodes, u.PL, Q, RList)
-                
+
                 if u.PR != None:
                     self.GDFS(Nodes, u.PR, Q, RList)
 
             else:
                 return
-        
+
         else:
             score = self.RScore(u.D, Q)
             if score > kthscore:
@@ -233,23 +236,23 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                         return
 
                 RList[-1] = (score, u.FID)
-               
+
                 for i in range(len(RList) - 1, 0, -1):
                     if RList[i][0] > RList[i - 1][0]:
                         temp = RList[i - 1]
                         RList[i - 1] = RList[i]
                         RList[i] = temp
-                
-            
+
+
             return
 
 
-                
+
     def GenTrapdoor(self):
         currentTime = time.time()
         if not os.path.isfile('dataowner/BDMRStree.json') or not os.path.isfile('dataowner/idf.json'):
             self.txtContent.setPlainText('相關的索引檔尚未建立，請聯絡資料庫擁有者')
-            
+
             return
 
         if not os.path.isfile('dataowner/basic_secret.bin'):
@@ -263,7 +266,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         IDF_p = json.loads(str1)
 
         raw_search = self.txtKeyword.text()
-        
+
         try:
             search = raw_search.split('->')[0]
             filename = raw_search.split('->')[1]
@@ -271,7 +274,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             search = raw_search
             filename = 'trapdoor'
         vector = self.getplainSearchVector(search)
-        
+
         Q = np.zeros(self.m)
         Q_1 = np.zeros(self.m)
         Q_2 = np.zeros(self.m)
@@ -285,6 +288,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         S = cipher[0]
         index1 = int(cipher[1])
         index2 = int(cipher[2])
+        print(cipher)
         M1 = make_spd_matrix(self.m, random_state = index1)
         M2 = make_spd_matrix(self.m, random_state = index2)
         M1_inv = np.linalg.inv(M1)
@@ -295,7 +299,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 Q[i] = IDF_p[i]
 
         q = math.sqrt(np.sum(np.power(Q, 2)))
-            
+
         Q = Q / q
 
         for i in range(self.m):
@@ -315,17 +319,95 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         print(f'花費時間:{used_time}秒')
 
         self.txtContent.setPlainText('trapdoor已建立成功')
-        f = open(f"trapdoor/{filename}.json", "w")
+        f = open(f"trapdoor/BDMRS/{filename}.json", "w")
         f.write(json.dumps(TD))
         f.close()
 
-   
+    def GenTrapdoor_E(self):
+        currentTime = time.time()
+        if not os.path.isfile('dataowner/EDMRStree.json') or not os.path.isfile('dataowner/idf.json'):
+            self.txtContent.setPlainText('相關的索引檔尚未建立，請聯絡資料庫擁有者')
+
+            return
+
+        if not os.path.isfile('dataowner/basic_secret.bin'):
+            self.txtContent.setPlainText('請先向資料庫擁有者取得金鑰！')
+            return
+
+        print('Generate Trapdoor for EDMRS')
+
+        f = open('dataowner/idf.json', 'r')
+        str1 = f.read()
+        IDF_p = json.loads(str1)
+
+        raw_search = self.txtKeyword.text()
+
+        try:
+            search = raw_search.split('->')[0]
+            filename = raw_search.split('->')[1]
+        except:
+            search = raw_search
+            filename = 'trapdoor'
+        vector = self.getplainSearchVector(search)
+
+        Q = np.zeros(self.m + self.m_p)
+        Q_1 = np.zeros(self.m + self.m_p)
+        Q_2 = np.zeros(self.m + self.m_p)
+        cryptogen = SystemRandom()
+
+        f = open('dataowner/basic_secret.bin', "rb")
+        cipherdata = f.read()
+        f.close()
+        cipherdata = cipherdata.decode()
+        cipher = cipherdata.split('\n')
+        S = cipher[0]
+        index1 = int(cipher[1])
+        index2 = int(cipher[2])
+        print(cipher)
+        M1 = make_spd_matrix(self.m + self.m_p, random_state = index1)
+        M2 = make_spd_matrix(self.m + self.m_p, random_state = index2)
+        M1_inv = np.linalg.inv(M1)
+        M2_inv = np.linalg.inv(M2)
+
+        for i in range(len(vector)):
+            if vector[i] != 0:
+                Q[i] = IDF_p[i]
+
+
+        q = math.sqrt(np.sum(np.power(Q, 2)))
+
+        Q = Q / q
+
+        # Set half of m_p as 1
+        Q[np.random.choice(self.m_p, int(self.m_p / 2), replace=False) + self.m] = 1
+
+        for i in range(self.m):
+            if S[i] == '1':
+                Q_1[i] = Q[i]
+                Q_2[i] = Q[i]
+            else:
+                Q_1[i] = cryptogen.random()
+                Q_2[i] = Q[i] - Q_1[i]
+
+        TD_1 = M1_inv.dot(Q_1)
+        TD_2 = M2_inv.dot(Q_2)
+
+        TD = list(TD_1) + list(TD_2)
+
+        used_time = time.time() - currentTime
+        print(f'花費時間:{used_time}秒')
+
+        self.txtContent.setPlainText('trapdoor已建立成功')
+        f = open(f"trapdoor/EDMRS/{filename}.json", "w")
+        f.write(json.dumps(TD))
+        f.close()
+
 
 
     def BDMRS(self):
         currentTime = time.time()
         self.searchMode = 0
-        
+
 
         if not os.path.isfile('dataowner/BDMRStree.json'):
             self.txtContent.setPlainText('相關的索引檔尚未建立，請聯絡資料庫擁有者')
@@ -335,7 +417,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         if filename == '':
             filename = 'trapdoor'
 
-        if not os.path.isfile(f'trapdoor/{filename}.json'):
+        if not os.path.isfile(f'trapdoor/BDMRS/{filename}.json'):
             self.txtContent.setPlainText('請先產生搜尋用的trapdoor!')
             return
 
@@ -345,23 +427,22 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         str1 = f.read()
 
         n = self.end - self.start + 1
-        Nodes = []              
+        Nodes = []
         AllNodes = json.loads(str1)
         for Node in AllNodes:
             treenode = TreeNode(Node['ID'], Node['FID'])
             treenode.PL = Node['PL']
             treenode.PR = Node['PR']
             treenode.D = np.array(Node['Iu'])
-            
+
             Nodes.append(treenode)
 
-        f = open(f'trapdoor/{filename}.json', "r")
+        f = open(f'trapdoor/BDMRS/{filename}.json', "r")
         str1 = f.read()
         TD = np.array(json.loads(str1))
         k = self.maxSearchTerm
         RList = [(0, -1) for x in range(k)]
         self.GDFS(Nodes, -1, TD, RList)
-        print(RList)
 
         self.searchResult.clear()
         self.lstTitle.clear()
@@ -383,13 +464,74 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         print(f'花費時間:{used_time}秒')
         self.lstTitle.setCurrentRow(0)
         self.searchMode = 1
-            
+
         if self.searchResult:
             self.display2(0)
 
+    def EDMRS(self):
+        currentTime = time.time()
+        self.searchMode = 0
 
 
-        
+        if not os.path.isfile('dataowner/EDMRStree.json'):
+            self.txtContent.setPlainText('相關的索引檔尚未建立，請聯絡資料庫擁有者')
+            return
+
+        filename = self.txtKeyword.text()
+        if filename == '':
+            filename = 'trapdoor'
+
+        if not os.path.isfile(f'trapdoor/EDMRS/{filename}.json'):
+            self.txtContent.setPlainText('請先產生搜尋用的trapdoor!')
+            return
+
+        print('searching by EDMRS')
+
+        f = open(f"dataowner/EDMRStree.json", "r")
+        str1 = f.read()
+
+        n = self.end - self.start + 1
+        Nodes = []
+        AllNodes = json.loads(str1)
+        for Node in AllNodes:
+            treenode = TreeNode(Node['ID'], Node['FID'])
+            treenode.PL = Node['PL']
+            treenode.PR = Node['PR']
+            treenode.D = np.array(Node['Iu'])
+
+            Nodes.append(treenode)
+
+        f = open(f'trapdoor/EDMRS/{filename}.json', "r")
+        str1 = f.read()
+        TD = np.array(json.loads(str1))
+        k = self.maxSearchTerm
+        RList = [(0, -1) for x in range(k)]
+        self.GDFS(Nodes, -1, TD, RList)
+
+        self.searchResult.clear()
+        self.lstTitle.clear()
+
+        n = 0
+        for ret in RList:
+            if ret[1] == -1:
+                continue
+            n = n + 1
+
+            r = self.start + ret[1]
+            f = open(f"dataowner/Encrypted/{r}.bin", "rb")
+            context = f.read()
+            f.close()
+            self.searchResult.append(context)
+            self.lstTitle.addItem(f'Encrypted Doc {n}')
+
+        used_time = time.time() - currentTime
+        print(f'花費時間:{used_time}秒')
+        self.lstTitle.setCurrentRow(0)
+        self.searchMode = 1
+
+        if self.searchResult:
+            self.display2(0)
+
 
     def UDMRS(self):
         currentTime = time.time()
@@ -404,24 +546,24 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         str1 = f.read()
 
         n = self.end - self.start + 1
-        Nodes = []              
+        Nodes = []
         AllNodes = json.loads(str1)
         for Node in AllNodes:
             treenode = TreeNode(Node['ID'], Node['FID'])
             treenode.PL = Node['PL']
             treenode.PR = Node['PR']
             treenode.D = np.array(Node['D'])
-            
+
             Nodes.append(treenode)
 
-        
+
         f = open('dataowner/idf.json', 'r')
         str1 = f.read()
         IDF_p = json.loads(str1)
-        
+
         search = self.txtKeyword.text()
         vector = self.getplainSearchVector(search)
-        
+
         Q = np.zeros(1500)
 
         for i in range(len(vector)):
@@ -429,15 +571,15 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 Q[i] = IDF_p[i]
 
         q = math.sqrt(np.sum(np.power(Q, 2)))
-            
+
         Q = Q / q
-        
+
         print(self.RScore(Nodes[0].D, Q))
 
         k = self.maxSearchTerm
 
         RList = [(0, -1) for x in range(k)]
-        
+
         self.GDFS(Nodes, -1, Q, RList)
 
         print(RList)
@@ -463,22 +605,22 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         print(f'花費時間:{used_time}秒')
         self.lstTitle.setCurrentRow(0)
         self.searchMode = 1
-            
+
         if self.searchResult:
             self.display2(0)
 
 
-    
-    
+
+
 
     def spinValueChanged(self):
         self.maxSearchTerm = self.spinBox.value()
 
- 
+
     def display(self, currentRow):
         if self.lstTitle.count == 0:
             return
-        
+
         if self.searchMode == 1:
             j_content = self.searchResult[currentRow]['content'].split('※ 發信站: 批踢踢實業坊')[0]
             try:
@@ -495,7 +637,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             content = '-----TITLE------\n'
             content = content + j_title + '\n'
             content = content + '-----CONTENT-----\n'
-            content = content + j_content + '\n' 
+            content = content + j_content + '\n'
             content = content + '-----PUSH-----\n'
             content = content + j_push
             self.txtContent.setPlainText(content)
@@ -509,13 +651,13 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             cp = '------ENCRYPTED DOC------\n'
             cp += b64encode(self.searchResult[currentRow]).decode('utf-8')
             self.txtContent.setPlainText(cp)
-        
+
         elif self.searchMode == 2:
             j_content = self.searchResult[currentRow]['content'].split('※ 發信站: 批踢踢實業坊')[0]
             try:
                 j_title =j_content.split('\n')[1]
                 j_content = j_content.split(j_title)[1]
-                
+
             except:
                 j_title = ''
             try:
@@ -526,7 +668,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             content = '-----TITLE------\n'
             content = content + j_title + '\n'
             content = content + '-----CONTENT-----\n'
-            content = content + j_content + '\n' 
+            content = content + j_content + '\n'
             content = content + '-----PUSH-----\n'
             content = content + j_push
             self.txtContent.setPlainText(content)
@@ -537,7 +679,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 j_title = j_content.split('\n')[1]
                 j_content = j_content.split(j_title)[1]
-                
+
             except:
                 j_title = ''
             try:
@@ -548,7 +690,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             content = '-----TITLE------\n'
             content = content + j_title + '\n'
             content = content + '-----CONTENT-----\n'
-            content = content + j_content + '\n' 
+            content = content + j_content + '\n'
             content = content + '-----PUSH-----\n'
             content = content + j_push
             self.txtContent.setPlainText(content)
@@ -558,8 +700,8 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         database = {}
 
         print("建立資料庫索引中...")
-               
-        
+
+
         for i in range(self.num):
             print(f'Indexing file {i}')
             f = open(f"rawText/{i}.json", "r")
@@ -568,13 +710,13 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 j = json.loads(context)
             except:
                 continue
-            
+
             title = []
             content = []
             push = []
-            
+
             count = 0
-            
+
             for keyword in self.keyword:
                 if keyword in j['title']:
                     title.append(count)
@@ -590,15 +732,15 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                     j_content = j_content.split(j_title)[1]
                 except:
                     pass
-                
+
                 if keyword in j_content:
                     content.append(count + 500)
-              
+
                 if keyword in j_push:
                     push.append(count + 1000)
 
                 count = count + 1
-       
+
 
             title.extend(content)
             title.extend(push)
@@ -608,8 +750,8 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         f.write(json.dumps(database))
         f.close()
 
-     
-    
+
+
     def generateRaw(self):
         counter = 67532
         print("從PTT抓取資料中...")
@@ -622,7 +764,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 page = requests.get(url).text
                 htm = soup(page,'html.parser')
                 result = htm.select("div.title a")
-                
+
                 msg = ""
                 self.txtContent.setPlainText("")
                 for i, r in enumerate(result):
@@ -635,29 +777,29 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                     #msg += r['href'] + "\n"
                     article_url = 'https://www.ptt.cc/' + r['href']
                     article = requests.get(article_url).text
-                    
+
                     content = soup(article,'html.parser')
                     msg = ""
                     content_result = content.select('div#main-container')
                     for c in content_result:
                         msg += c.text + "\n"
-                    
+
                     obj['content']= msg
 
                     push_result = content.select('div.push')
                     msg = ""
                     for p in push_result:
-                        
+
                         msg += p.select('span.push-userid')[0].text
                         msg += p.select('span.push-content')[0].text + "\n"
-                    
+
                     obj['push'] = msg
 
 
                     f.write(json.dumps(obj))
                     f.close()
-                    counter += 1 
-                    self.txtContent.setPlainText(self.txtContent.toPlainText()+f"Processed Article {'https://www.ptt.cc/' + r['href']}\n")    
+                    counter += 1
+                    self.txtContent.setPlainText(self.txtContent.toPlainText()+f"Processed Article {'https://www.ptt.cc/' + r['href']}\n")
                 self.txtContent.setPlainText(self.txtContent.toPlainText()+f"Processed Page{i}\n")
             except:
                 pass
@@ -668,30 +810,30 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         for keyword in keywords:
             name = keyword.split(':')[0]
             Type = keyword.split(':')[1]
-            
+
             if name in self.keyword:
                 index = self.keyword.index(name)
 
                 if Type == 'title':
                     print(index)
                     vector[index] = 1
-                
+
                 elif Type == 'content':
                     vector[index + 500] = 1
                     print(index + 500)
                 elif Type == 'push':
                     print(index + 1000)
                     vector[index + 1000] = 1
-                
+
                 elif Type == 'all':
                     vector[index] = 1
                     vector[index + 500] = 1
                     vector[index + 1000] = 1
-        
+
         return vector
 
- 
-    
+
+
 
     def plainSearch(self):
         self.searchMode = 0
@@ -699,17 +841,17 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         search = self.txtKeyword.text()
         vector = getplainSearchVector(search)
         result = np.dot(self.database, vector)
-        
+
         print('sum')
         print(np.sum(result))
         rank = (np.argsort(result))[::-1]
         print(rank)
         final_rank = [x for x in rank if result[x] > 0]
         final_rank = final_rank[:self.maxSearchTerm]
-        
+
         print(len(final_rank))
 
-        
+
 
         self.searchResult.clear()
         self.lstTitle.clear()
@@ -724,7 +866,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.lstTitle.setCurrentRow(0)
         self.searchMode = 1
-            
+
         if self.searchResult:
             self.display(0)
 
@@ -738,39 +880,39 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         for keyword in keywords:
             name = keyword.split(':')[0]
             Type = keyword.split(':')[1]
-            
+
             if name in self.keyword:
                 index = self.keyword.index(name)
 
                 if Type == 'title':
                     print(index)
                     vector[index] = 1
-                
+
                 elif Type == 'content':
                     vector[index + 500] = 1
                     print(index + 500)
                 elif Type == 'push':
                     print(index + 1000)
                     vector[index + 1000] = 1
-                
+
                 elif Type == 'all':
                     vector[index] = 1
                     vector[index + 500] = 1
                     vector[index + 1000] = 1
 
-        
+
         result = np.dot(self.database, vector)
-        
+
         print('sum')
         print(np.sum(result))
         rank = (np.argsort(result))[::-1]
         print(rank)
         final_rank = [x for x in rank if result[x] > 0]
         final_rank = final_rank[:self.maxSearchTerm]
-        
+
         print(len(final_rank))
 
-        
+
 
         self.searchResult.clear()
         self.lstTitle.clear()
@@ -786,17 +928,17 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.lstTitle.setCurrentRow(0)
         self.searchMode = 1
-            
+
         if self.searchResult:
             self.display2(0)
-        
 
-            
-       
+
+
+
        # print(search)
         #index = self.keyword.index(search)
         #print(index)
-       
-     
-        
-   
+
+
+
+

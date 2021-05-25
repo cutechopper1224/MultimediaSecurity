@@ -179,7 +179,7 @@
      <rect>
       <x>1250</x>
       <y>20</y>
-      <width>141</width>
+      <width>111</width>
       <height>51</height>
      </rect>
     </property>
@@ -196,9 +196,9 @@
    <widget class="QPushButton" name="btnTrapdoorSearch">
     <property name="geometry">
      <rect>
-      <x>1410</x>
+      <x>1380</x>
       <y>20</y>
-      <width>161</width>
+      <width>121</width>
       <height>51</height>
      </rect>
     </property>
@@ -209,7 +209,45 @@
      </font>
     </property>
     <property name="text">
-     <string>使用Trapdoor查詢</string>
+     <string>BDMRS Search</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnTrapdoor_2">
+    <property name="geometry">
+     <rect>
+      <x>1520</x>
+      <y>20</y>
+      <width>131</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>產生Trapdoor_E</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btnTrapdoorSearch_2">
+    <property name="geometry">
+     <rect>
+      <x>1660</x>
+      <y>20</y>
+      <width>141</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>微軟正黑體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>EDMRS Search</string>
     </property>
    </widget>
   </widget>
@@ -219,7 +257,7 @@
      <x>0</x>
      <y>0</y>
      <width>1852</width>
-     <height>18</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

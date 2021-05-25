@@ -2,5 +2,8 @@ dataowner/rawText
 dataowner/Encrypted
 /rawTexts
 /trapdoor/*.json
+/trapdoor/EDMRS/*.json
+/trapdoor/BDMRS/*.json
 /dataowner/*.json
 /dataowner/basic_secret.bin
+tags
