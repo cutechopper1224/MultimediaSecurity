@@ -41,8 +41,8 @@ class Article():
         self.content = ""
         self.push = ""
 
-class MainUi(QtWidgets.QMainWindow, Ui_MainWindow): 
-    
+class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
+
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
@@ -55,8 +55,9 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.end = 100000
         self.keyword = []
         self.m = 1500
+        self.m_p = 100
         self.initialize()
-  
+
     def initialize(self):
         f = open(f"keyword.txt", "r")
         first = f.read()
@@ -69,19 +70,20 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnEncrypt.clicked.connect(self.showPassForm)
         self.btnTree.clicked.connect(self.generateTreeIndex)
         self.btnSec1.clicked.connect(self.generateBDMRSIndex)
-        
+        self.btnSec2.clicked.connect(self.generateEDMRSIndex)
 
-    
+
+
     def createBasicSecret(self):
         print('Generating Basic serect ...')
 
         cryptogen = SystemRandom()
-        sec = [cryptogen.randrange(2) for i in range(self.m)]
+        sec = [cryptogen.randrange(2) for i in range(self.m + self.m_p)]
         index1 = cryptogen.randrange(10 ** 6)
         index2 = cryptogen.randrange(10 ** 6)
-        
-        
-        
+
+
+
         cipher = ''
         for s in sec:
             cipher += str(s)
@@ -90,40 +92,40 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         cipher += '\n'
         cipher += str(index2)
 
-        
+
 
         outputFile = 'basic_secret.bin'
 
         with open(outputFile, "wb") as f:
             f.write(cipher.encode())
-                
-        
+
+
         #print(np.linalg.inv(M1))
         #print(M1.shape)
-        
 
-        
+
+
 
     def showPassForm(self):
         self.dialog = myDialog()
         self.dialog.resize(713, 300)
         self.dialog.setWindowIcon(QtGui.QIcon(iconFile))
-               
+
         self.dialog.edit = QLineEdit(self.dialog)
         self.dialog.edit.resize(531,41)
         self.dialog.edit.move(80,100)
         self.dialog.edit.setEchoMode(QLineEdit.Password)
         self.dialog.edit.setFont(QFont("Agency FB",24,QFont.Bold))
-        
-        
-        
+
+
+
         btn= QPushButton('確定',self.dialog)
         btn.move(260,220)
         btn.resize(160,61)
         btn.clicked.connect(self.EncryptData)
-        
+
         self.dialog.setWindowTitle("請輸入密碼")
-       
+
         self.dialog.setWindowModality(Qt.ApplicationModal)
         self.dialog.exec_()
 
@@ -143,17 +145,17 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 context = f.read()
                 f.close()
                 j = json.loads(context)
-            
+
                 #Generate Key
-                
+
                 key = PBKDF2(password, salt, dkLen=32)
-            
+
                 #Encrypt Data
 
                 data = j['content'].encode()
                 cipher = AES.new(key, AES.MODE_CFB)
                 cipheredData = cipher.encrypt(data)
-                    
+
                 outputFile = f"Encrypted/{i}.bin"
 
                 with open(outputFile, "wb") as f:
@@ -187,11 +189,11 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if not os.path.isfile('tf.json'):
             self.generateTF()
-            
+
         if not os.path.isfile('idf.json'):
             self.generateIDF()
-            
-        
+
+
 
         # Load TF table
         f = open(f"tf.json", "r")
@@ -199,14 +201,14 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
         n = self.end - self.start + 1
 
-        
+
         Freqs = np.array(json.loads(str1))
         print(Freqs.shape)
-        
-      
+
+
         # BuildIndexTree
 
-        
+
 
         serial = 0
         CurrentNodeSet = []
@@ -222,7 +224,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         print(CurrentNodeSet[-1].D)
 
         AllNodes = AllNodes + CurrentNodeSet
-       
+
         count = 0
         while len(CurrentNodeSet) > 1:
             count = count + 1
@@ -238,7 +240,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                     u.PR = u2.ID
                     u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
                     TempNodeSet.append(u)
-            
+
             else:
                 h = (len(CurrentNodeSet) - 1) // 2
                 for p in range(0, h + 1, 2):
@@ -268,7 +270,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 u.PR = u2.ID
                 u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
                 TempNodeSet.append(u)
-            
+
             AllNodes = AllNodes + TempNodeSet
             CurrentNodeSet = TempNodeSet
 
@@ -286,7 +288,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         f.close()
 
 
-    
+
     def generateBDMRSIndex(self):
         currentTime = time.time()
 
@@ -313,14 +315,14 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         M1 = make_spd_matrix(self.m, random_state = index1)
         M2 = make_spd_matrix(self.m, random_state = index2)
         cryptogen = SystemRandom()
-        
+
 
         f = open(f"plaintree.json", "r")
         str1 = f.read()
 
         n = self.end - self.start + 1
-        Nodes = []   
-        SecureNodes = []           
+        Nodes = []
+        SecureNodes = []
         AllNodes = json.loads(str1)
         for Node in AllNodes:
             print(f"Processing Node {Node['ID']}")
@@ -335,7 +337,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 if S[i] == '0':
                     Du_1[i] = Du[i]
                     Du_2[i] = Du[i]
-                
+
                 else:
                     Du_1[i] = cryptogen.random()
                     Du_2[i] = Du[i] - Du_1[i]
@@ -344,41 +346,108 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             Iu_2 = M2.dot(Du_2)
             Iu = list(Iu_1) + list(Iu_2)
             print(Iu_1)
-            
+
             securenode.Iu = Iu
-            
+
             SecureNodes.append(securenode)
 
         used_time = time.time() - currentTime
         self.label2.setText(f'花費時間:{used_time}秒')
-            
+
 
         f = open(f"BDMRStree.json", "w")
         f.write(json.dumps(SecureNodes, cls=TreeNodeEncoder))
         f.close()
 
-        
-        
+
+    def generateEDMRSIndex(self):
+        currentTime = time.time()
+
+        if os.path.isfile('EDMRStree.json'):
+            self.label1.setText('已經產生過該索引')
+            return
+
+        print("Generating EDMRS index...")
+        if not os.path.isfile('basic_secret.bin'):
+            self.createBasicSecret()
+
+        if not os.path.isfile('plaintree.json'):
+            self.generateTreeIndex()
+
+        f = open('basic_secret.bin', "rb")
+        cipherdata = f.read()
+        f.close()
+        cipherdata = cipherdata.decode()
+        cipher = cipherdata.split('\n')
+        S = cipher[0]
+        index1 = int(cipher[1])
+        index2 = int(cipher[2])
+
+        M1 = make_spd_matrix(self.m + self.m_p, random_state = index1)
+        M2 = make_spd_matrix(self.m + self.m_p, random_state = index2)
+        cryptogen = SystemRandom()
 
 
-        
+        f = open(f"plaintree.json", "r")
+        str1 = f.read()
 
-        
+        n = self.end - self.start + 1
+        Nodes = []
+        SecureNodes = []
+        AllNodes = json.loads(str1)
+        for Node in AllNodes:
+            print(f"Processing Node {Node['ID']}")
+            securenode = SecureTreeNode(Node['ID'], Node['FID'])
+            securenode.PL = Node['PL']
+            securenode.PR = Node['PR']
+            Du = np.array(Node['D'])
+            phantom = np.random.rand(self.m_p)
+            Du = np.append(Du, phantom)
 
-        
+            Du_1 = np.zeros(self.m + self.m_p)
+            Du_2 = np.zeros(self.m + self.m_p)
+            for i in range(self.m + self.m_p):
+                if S[i] == '0':
+                    Du_1[i] = Du[i]
+                    Du_2[i] = Du[i]
+
+                else:
+                    Du_1[i] = cryptogen.random()
+                    Du_2[i] = Du[i] - Du_1[i]
+
+            Iu_1 = M1.dot(Du_1)
+            Iu_2 = M2.dot(Du_2)
+            Iu = list(Iu_1) + list(Iu_2)
+            print(Iu_1)
+
+            securenode.Iu = Iu
+
+            SecureNodes.append(securenode)
+
+        used_time = time.time() - currentTime
+        self.label2.setText(f'花費時間:{used_time}秒')
+
+
+        f = open(f"EDMRStree.json", "w")
+        f.write(json.dumps(SecureNodes, cls=TreeNodeEncoder))
+        f.close()
+
+
+
+
 
 
     def generateIDF(self):
         print("Calculating IDF")
 
-        
+
 
         N = self.end - self.start + 1
         database = np.zeros(self.m)
 
         max_term = 0
         for k in range(self.start, self.end + 1):
-            
+
             print(f"Calculating IDF for {k}")
             f = open(f"rawText/{k}.json", "r")
             context = f.read()
@@ -388,7 +457,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 pass
 
             j_content = j['content'].split('※ 發信站: 批踢踢實業坊')[0]
-            
+
             try:
                 j_title = j_content.split('\n')[1]
                 j_content = j_content.split(j_title)[1]
@@ -407,21 +476,21 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
             term = title + content + push
 
-            
-            
+
+
             for i in range(len(term)):
                 if term[i] != 0:
                     database[i] += 1
 
-        
+
         IDF_p = [np.log(1 + N / database[i]) if database[i] > 0 else 0 for i in range(self.m)]
         #q = math.sqrt(np.sum(np.power(IDF_p, 2)))
-            
+
         #IDF = list(np.array(IDF_p) / q)
-        
+
         f = open(f"idf.json", "w")
         f.write(json.dumps(IDF_p))
-        f.close()        
+        f.close()
 
 
     def generateTF(self):
@@ -430,8 +499,8 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         eps = 0.5
         for k in range(self.start, self.end + 1):
             print(f"Calculating TF for {k}")
-          
-            
+
+
             f = open(f"rawText/{k}.json", "r")
 
             context = f.read()
@@ -439,11 +508,11 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 j = json.loads(context)
             except:
                 pass
-   
+
             frequency = {}
-            
+
             j_content = j['content'].split('※ 發信站: 批踢踢實業坊')[0]
-            
+
             try:
                 j_title = j_content.split('\n')[1]
                 j_content = j_content.split(j_title)[1]
@@ -462,18 +531,18 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
             f3 = f_title + f_content + f_push
             f3 = np.array(f3)
-            
+
             q = math.sqrt(np.sum(np.power(f3, 2)))
-            
-            
+
+
             frequency = f3 / q
-            
+
             Freqs.append(list(frequency))
-        
-        
+
+
         f = open(f"tf.json", "w")
         f.write(json.dumps(Freqs))
         f.close()
-        
 
-        
+
+
