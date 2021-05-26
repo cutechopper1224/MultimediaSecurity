@@ -330,7 +330,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
             return
 
-        if not os.path.isfile('dataowner/basic_secret.bin'):
+        if not os.path.isfile('dataowner/basic_secret_EDMRS.bin'):
             self.txtContent.setPlainText('請先向資料庫擁有者取得金鑰！')
             return
 
@@ -355,7 +355,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         Q_2 = np.zeros(self.m + self.m_p)
         cryptogen = SystemRandom()
 
-        f = open('dataowner/basic_secret.bin', "rb")
+        f = open('dataowner/basic_secret_EDMRS.bin', "rb")
         cipherdata = f.read()
         f.close()
         cipherdata = cipherdata.decode()

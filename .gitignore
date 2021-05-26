@@ -6,4 +6,5 @@ dataowner/Encrypted
 /trapdoor/BDMRS/*.json
 /dataowner/*.json
 /dataowner/basic_secret.bin
+/dataowner/basic_secret_EDMRS.bin
 tags
