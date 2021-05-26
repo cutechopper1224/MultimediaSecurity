@@ -74,7 +74,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def createBasicSecret(self):
+    def createBasicSecret(self, filename='basic_secret'):
         print('Generating Basic serect ...')
 
         cryptogen = SystemRandom()
@@ -94,7 +94,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-        outputFile = 'basic_secret.bin'
+        outputFile = filename + '.bin'
 
         with open(outputFile, "wb") as f:
             f.write(cipher.encode())
@@ -368,13 +368,13 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
         print("Generating EDMRS index...")
-        if not os.path.isfile('basic_secret.bin'):
-            self.createBasicSecret()
+        if not os.path.isfile('basic_secret_EDMRS.bin'):
+            self.createBasicSecret('basic_secret_EDMRS')
 
         if not os.path.isfile('plaintree.json'):
             self.generateTreeIndex()
 
-        f = open('basic_secret.bin', "rb")
+        f = open('basic_secret_EDMRS.bin', "rb")
         cipherdata = f.read()
         f.close()
         cipherdata = cipherdata.decode()
