@@ -9,3 +9,5 @@ dataowner/Encrypted
 /dataowner/basic_secret_EDMRS.bin
 tags
 /dataowner/*.json
+/mainForm/__pycache__
+/dataowner/mainForm/__pycache__
