@@ -30,6 +30,7 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
 from random import SystemRandom
 from dataowner.mainForm.Tree import TreeNode, SecureTreeNode
+from dataowner.mainForm.Parameter import *
 from sklearn.datasets import make_spd_matrix
 salt = b'\xd0\x18\xa7QM\xd6\x9b\xebxu\xe4\xed\xa8\x83\xf6\xa3/\x01\x9c\x9e\x86n\xda;\x10EdD\xf7\x932\xcc'
 
@@ -50,8 +51,8 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inGuiEvent()
         self.dialog = None
         self.num = 105961
-        self.start = 99001
-        self.end = 100000
+        self.start = FILE_START
+        self.end = FILE_END
         self.m = 1500
         self.m_p = 100
         self.database = np.zeros((self.num, 1500))
@@ -60,7 +61,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.spinBox.setMinimum(1)
         self.spinBox.setMaximum(1000)
         self.spinBox.setValue(100)
-
+      
         self.searchResult = []
         self.searchMode = 0
         self.createDatabase()

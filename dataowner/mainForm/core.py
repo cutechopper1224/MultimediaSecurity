@@ -20,6 +20,7 @@ import numpy as np
 import math
 from .mydialog import myDialog
 from .Tree import *
+from .Parameter import *
 import time
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
@@ -51,8 +52,8 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.inGuiEvent()
         self.num = 105961
         self.dialog = None
-        self.start = 99001
-        self.end = 100000
+        self.start = FILE_START
+        self.end = FILE_END
         self.keyword = []
         self.m = 1500
         self.m_p = 100
