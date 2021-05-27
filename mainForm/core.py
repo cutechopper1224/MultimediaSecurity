@@ -70,7 +70,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def inGuiEvent(self):
         #self.btnGenerate.clicked.connect(self.generateRaw)
-        self.btnSearch.clicked.connect(self.plainSearch2)
+        self.btnSearch.clicked.connect(self.plainSearch)
         #self.btnIndex.clicked.connect(self.generateIndex)
         self.lstTitle.currentRowChanged.connect(self.display2)
         self.btnDecrypt.clicked.connect(self.showPassForm)
@@ -94,20 +94,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def createDatabase(self):
-        f = open(f"index.json", "r")
-        str1 = f.read()
-        obj = json.loads(str1)
-        for i in range(self.num):
-            try:
-                index = obj[str(i)]
-            except:
-                continue
-            for ind in index:
-                self.database[i][ind] = 1
-
-
-        f.close()
-
+        
         f = open(f"keyword.txt", "r")
         first = f.read()
         f.close()
@@ -835,13 +822,35 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-
     def plainSearch(self):
         self.searchMode = 0
+        self.searchResult.clear()
+        if not os.path.isfile('dataowner/index.json'):
+            print('相關的索引檔尚未建立，請聯絡資料庫擁有者')
+            return
+
+        f = open('dataowner/index.json', 'r')
+        str1 = f.read()
+        obj = json.loads(str1)
+        database = np.zeros((self.num, self.m))
+        for i in obj.keys():
+            for pair in obj[i]:
+                database[int(i)][pair[0]] = pair[1]
+        
+
         self.txtContent.setPlainText(f"對原始資料進行搜尋... ({self.txtKeyword.text()})")
         search = self.txtKeyword.text()
-        vector = getplainSearchVector(search)
-        result = np.dot(self.database, vector)
+        vector = self.getplainSearchVector(search)
+        
+
+        result = np.dot(database, vector)
+        '''
+        for p in range(0, self.start):
+            result[p] = -10000
+        
+        for p in range (self.end + 2, self.num):
+            result[p] = -100000
+        '''
 
         print('sum')
         print(np.sum(result))
@@ -852,24 +861,26 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
 
         print(len(final_rank))
 
-
-
         self.searchResult.clear()
         self.lstTitle.clear()
 
+        n = 0
         for ret in final_rank:
-            f = open(f"dataowner/rawText/{ret}.json", "r")
+            n = n + 1
+            f = open(f"dataowner/Encrypted/{ret}.bin", "rb")
             context = f.read()
             f.close()
-            j = json.loads(context)
-            self.searchResult.append(j)
-            self.lstTitle.addItem(j['title'])
+            self.searchResult.append(context)
+            self.lstTitle.addItem(f'Encrypted Doc {n}')
 
         self.lstTitle.setCurrentRow(0)
         self.searchMode = 1
 
         if self.searchResult:
-            self.display(0)
+            self.display2(0)
+
+
+    
 
 
     def plainSearch2(self):

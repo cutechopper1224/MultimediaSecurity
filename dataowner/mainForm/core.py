@@ -72,6 +72,58 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnTree.clicked.connect(self.generateTreeIndex)
         self.btnSec1.clicked.connect(self.generateBDMRSIndex)
         self.btnSec2.clicked.connect(self.generateEDMRSIndex)
+        self.btnProduct.clicked.connect(self.generateIndex)
+
+    
+    def generateIndex(self):
+        database = {}
+
+        print("建立資料庫索引中...")
+
+
+        for i in range(self.num):
+            print(f'Indexing file {i}')
+            f = open(f"rawText/{i}.json", "r")
+            context = f.read()
+            try:
+                j = json.loads(context)
+            except:
+                continue
+
+            title = []
+            content = []
+            push = []
+
+            count = 0
+
+           
+            j_content = j['content'].split('※ 發信站: 批踢踢實業坊')[0]
+
+            try:
+                j_title = j_content.split('\n')[1]
+                j_content = j_content.split(j_title)[1]
+                j_title = j_title.split('標題')[1].split('時間')[-2]
+            except:
+                j_title = ''
+
+            try:
+                j_push = j['content'].split('※ 發信站: 批踢踢實業坊')[1]
+            except:
+                j_push = ''
+
+            title = [j_title.count(keyword) for keyword in self.keyword]
+            content = [j_content.count(keyword) for keyword in self.keyword]
+            push = [j_push.count(keyword) for keyword in self.keyword]
+
+            term = title + content + push
+
+            inverted = [(x, term[x])  for x in range(len(term)) if term[x] != 0]
+            database[i] = inverted
+
+
+        f = open(f"index.json", "w")
+        f.write(json.dumps(database))
+        f.close()
 
 
 
@@ -242,7 +294,7 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                     u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
                     TempNodeSet.append(u)
 
-            else:
+            elif len(CurrentNodeSet) != 3:
                 h = (len(CurrentNodeSet) - 1) // 2
                 for p in range(0, h + 1, 2):
                     u1 = CurrentNodeSet[p]
@@ -271,6 +323,26 @@ class MainUi(QtWidgets.QMainWindow, Ui_MainWindow):
                 u.PR = u2.ID
                 u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
                 TempNodeSet.append(u)
+
+            else:
+                u1 = CurrentNodeSet[0]
+                u2 = CurrentNodeSet[1]
+                u = TreeNode(serial, 0)
+                serial += 1
+                u.PL = u1.ID
+                u.PR = u2.ID
+                u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
+                TempNodeSet.append(u)
+
+                u1 = CurrentNodeSet[1]
+                u2 = CurrentNodeSet[2]
+                u = TreeNode(serial, 0)
+                serial += 1
+                u.PL = u1.ID
+                u.PR = u2.ID
+                u.D = [max(u1.D[x], u2.D[x]) for x in range(self.m)]
+                TempNodeSet.append(u)
+
 
             AllNodes = AllNodes + TempNodeSet
             CurrentNodeSet = TempNodeSet
